@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+  <aside class="side">
+    <a class="brand" href="/"><i></i>Shield</a>
+
+    <div class="copy">
+      <h1>Invisible<br>to you.<br><em>Confusing<br>to machines.</em></h1>
+      <p class="lede">
+        Shield shifts the brightness of every pixel by a few steps out of 255.
+        You can't see it. An AI model reads those numbers directly, and it can.
+      </p>
+    </div>
+
+    <div class="foot">
+      <ol class="steps">
+        <li><span>01</span>Drop a photo</li>
+        <li><span>02</span>Wait for it to process</li>
+        <li><span>03</span>Post the PNG you download</li>
+      </ol>
+      <p class="fine">
+        No guarantee. Results depend on the AI model and fade with heavy
+        compression or editing. Protect only photos you own.
+      </p>
+    </div>
+  </aside>
+
+  <main class="tool" id="stage" data-state="idle" data-view="compare">
+
+    <div class="bar">
+      <span class="label status">
+        <b class="s-idle">Ready</b>
+        <b class="s-working">Processing</b>
+        <b class="s-done">Done</b>
+      </span>
+
+      <div class="seg" role="radiogroup" aria-label="Strength">
+        <label><input type="radio" name="strength" value="light"><span>Light</span></label>
+        <label><input type="radio" name="strength" value="balanced" checked><span>Balanced</span></label>
+        <label><input type="radio" name="strength" value="strong"><span>Strong</span></label>
+      </div>
+    </div>
+
+    <div class="panel panel-drop">
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <button class="drop" id="drop" type="button">
+        <span class="drop-title">Drop a photo</span>
+        <span class="label">or click to choose &middot; JPG, PNG, WebP &middot; max 15 MB</span>
+      </button>
+    </div>
+
+    <div class="panel panel-work">
+      <div class="work-img"><img id="preview" alt="Your photo"></div>
+      <div class="work-row">
+        <span class="label">Working on it</span>
+        <span class="clock" id="timer">00:00</span>
+      </div>
+      <div class="track"><div class="fill"></div></div>
+    </div>
+
+    <div class="panel panel-result">
+      <div class="tabs">
+        <button class="tab on" data-view="compare" type="button">Compare</button>
+        <button class="tab" data-view="diff" type="button">What the AI sees</button>
+      </div>
+
+      <div class="view view-compare">
+        <div class="compare" id="compare">
+          <img id="imgBefore" alt="Original" draggable="false">
+          <div class="after"><img id="imgAfter" alt="Protected" draggable="false"></div>
+          <span class="tag tag-l">Original</span>
+          <span class="tag tag-r">Protected</span>
+          <div class="handle" id="handle" tabindex="0" role="slider"
+               aria-label="Compare original and protected"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+            <span class="knob">&lsaquo; &rsaquo;</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="view view-diff">
+        <canvas id="diff"></canvas>
+        <p class="label cap">The change, amplified 25&times;. At normal brightness it can't be seen.</p>
+      </div>
+
+      <dl class="stats">
+        <div><dt>Verdict</dt><dd id="statVerdict">&ndash;</dd><small id="statVerdictNote">&nbsp;</small></div>
+        <div><dt>PSNR</dt><dd id="statPsnr">&ndash;</dd><small>higher is less visible</small></div>
+        <div><dt>SSIM</dt><dd id="statSsim">&ndash;</dd><small>1.0 is identical</small></div>
+        <div><dt>Time</dt><dd id="statTime">&ndash;</dd><small>seconds</small></div>
+      </dl>
+
+      <div class="actions">
+        <a class="btn primary" id="download" href="#" download>Download PNG</a>
+        <button class="btn" id="showNumbers" type="button">Show the numbers</button>
+        <button class="btn ghost" id="again" type="button">Protect another</button>
+      </div>
+    </div>
+
+    <p class="error" id="error" role="alert" hidden></p>
+  </main>
+</div>
+
+<dialog id="numbers">
+  <div class="dlg-head">
+    <div>
+      <p class="label">Under the hood</p>
+      <h2>The actual numbers</h2>
+    </div>
+    <button class="x" id="closeNumbers" type="button" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="dlg-ctrl">
+    <div class="pick" id="pick">
+      <img id="pickImg" alt="" draggable="false">
+      <span class="box" id="box"></span>
+    </div>
+    <div>
+      <p class="label">Channel</p>
+      <div class="seg" role="radiogroup" aria-label="Colour channel">
+        <label><input type="radio" name="ch" value="0" checked><span>Red</span></label>
+        <label><input type="radio" name="ch" value="1"><span>Green</span></label>
+        <label><input type="radio" name="ch" value="2"><span>Blue</span></label>
+      </div>
+      <p class="label hint">Click the photo to look at any other spot.</p>
+    </div>
+  </div>
+
+  <div class="grids">
+    <figure><figcaption class="label">Original</figcaption><div class="grid" id="gridA"></div></figure>
+    <figure><figcaption class="label">Protected</figcaption><div class="grid" id="gridB"></div></figure>
+    <figure><figcaption class="label">Change</figcaption><div class="grid" id="gridD"></div></figure>
+  </div>
+
+  <p class="dlg-note" id="dlgNote"></p>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
